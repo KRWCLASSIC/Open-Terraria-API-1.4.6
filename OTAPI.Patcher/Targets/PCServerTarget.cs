@@ -57,6 +57,34 @@ public class PCServerTarget : IServerPatchTarget
         modder.RelinkAssembly("ReLogic");
     }
 
+    public virtual void RegisterNativeFiles(string vanillaDllPath)
+    {
+        var root = Path.GetDirectoryName(Path.GetDirectoryName(vanillaDllPath)!)!;
+        var natives = new (string Source, string Rid)[]
+        {
+            (Path.Combine(root, "Linux", "lib64", "libGNS_Wrapper.so"), "linux-x64"),
+            (Path.Combine(root, "Linux", "lib64", "libprotobuf.so.3.15.3.0"), "linux-x64"),
+            (Path.Combine(root, "Mac", "Terraria Server.app", "Contents", "MacOS", "osx", "libGNS_Wrapper.dylib"), "osx-x64"),
+            (Path.Combine(root, "Mac", "Terraria Server.app", "Contents", "MacOS", "osx", "libGNS_Wrapper.dylib"), "osx-arm64"),
+        };
+        foreach (var (source, rid) in natives)
+        {
+            if (File.Exists(source))
+                NugetPackager.NativeFiles.Add((source, Path.Combine("runtimes", rid, "native")));
+        }
+    }
+
+    public virtual void MergeOpenNAT(ModFwModder modder, string vanillaDllPath)
+    {
+        var path = Path.Combine(Path.GetDirectoryName(vanillaDllPath)!, "OpenNAT.dll");
+        if (!File.Exists(path))
+            return;
+
+        Console.WriteLine("[OTAPI] Merging OpenNAT");
+        modder.ReadMod(path);
+        modder.RelinkAssembly("OpenNAT");
+    }
+
     public virtual void AddVersion(ModFwModder modder)
     {
         modder.AddVersion(Common.GetVersion());
@@ -89,6 +117,7 @@ public class PCServerTarget : IServerPatchTarget
 
             var vanillaDllPath = await DownloadServerAsync();
             var vanillaName = Path.GetFileNameWithoutExtension(vanillaDllPath);
+            RegisterNativeFiles(vanillaDllPath);
 
             Console.WriteLine("[OTAPI] Extracting embedded binaries and packing into one binary...");
             var embeddedResources = this.ExtractResources(vanillaDllPath);
@@ -120,6 +149,7 @@ public class PCServerTarget : IServerPatchTarget
                     if (modType == ModType.PreRead)
                     {
                         mm.AssemblyResolver.AddSearchDirectory(embeddedResources);
+                        mm.AssemblyResolver.AddSearchDirectory(Path.GetDirectoryName(vanillaDllPath));
                     }
                     else if (modType == ModType.Read)
                     {
@@ -131,6 +161,7 @@ public class PCServerTarget : IServerPatchTarget
 
                         CompileAndReadShims(mm);
                         MergeReLogic(mm, embeddedResources);
+                        MergeOpenNAT(mm, vanillaDllPath);
                         this.AddPatchMetadata(mm, mm.Module.Name, vanillaDllPath);
                     }
                 }
