@@ -64,6 +64,8 @@ public class PCServerTarget : IServerPatchTarget
         {
             (Path.Combine(root, "Linux", "lib64", "libGNS_Wrapper.so"), "linux-x64"),
             (Path.Combine(root, "Linux", "lib64", "libprotobuf.so.3.15.3.0"), "linux-x64"),
+            (Path.Combine(root, "Linux", "lib64", "libssl.so.1.1"), "linux-x64"),
+            (Path.Combine(root, "Linux", "lib64", "libcrypto.so.1.1"), "linux-x64"),
             (Path.Combine(root, "Mac", "Terraria Server.app", "Contents", "MacOS", "osx", "libGNS_Wrapper.dylib"), "osx-x64"),
             (Path.Combine(root, "Mac", "Terraria Server.app", "Contents", "MacOS", "osx", "libGNS_Wrapper.dylib"), "osx-arm64"),
         };
